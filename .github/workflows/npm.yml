@@ -1,0 +1,45 @@
+name: NPM Publish Workflow
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    name: Publishing to NPM
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '12.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: install dependencies
+        run: npm ci
+      - name: run tests
+        run: npm test
+      - name: publish to npm
+        run: npm publish
+
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  tweet:
+    name: Send Tweet Action
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_NAME: React Native Lorem Ipsum
+
+    steps:
+      - name: Construct tweet title
+        run: echo "TWEET_TEXT=A new version of $PROJECT_NAME was released - $GITHUB_REF $GITHUB_SERVER_URL/$GITHUB_REPOSITORY" >> $GITHUB_ENV
+      - uses: ethomson/send-tweet-action@v1.0.0
+        with:
+          status: ${{ env.TWEET_TEXT }}
+          consumer-key: ${{ secrets.TWITTER_CONSUMER_API_KEY }}
+          consumer-secret: ${{ secrets.TWITTER_CONSUMER_API_SECRET }}
+          access-token: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          access-token-secret: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
